@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'
 import FilterForm from './components/FilterForm'
 import AddPersonForm from './components/AddPersonForm'
 import RenderPersons from './components/RenderPersons'
+import personService from './services/persons'
 
 const App = () => {
 
@@ -13,10 +13,10 @@ const App = () => {
   const [filterValue, setFilterValue] = useState('')
 
   useEffect(() => {
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        setPersons(response.data)
+    personService
+      .getAll()
+      .then(initialPersons => {
+        setPersons(initialPersons)
       })
   }, [])
 
@@ -26,11 +26,28 @@ const App = () => {
       name: newName,
       number: newNumber
     }
-    const nameArray = persons.map(person => person.name)
-    if (nameArray.includes(newName)) {
-      window.alert(`${newName} is already added to phonebook`)
+    const foundPerson = persons.filter(person => person.name === newName)
+    if (foundPerson.length !== 0) {
+      const updateAllowed = window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)
+      if (updateAllowed) {
+        personService
+          .update(foundPerson[0].id, personObject)
+          .then(returnedPerson => {
+            setPersons(persons.map(person => {
+              if (person.name === returnedPerson.name) {
+                return returnedPerson
+              } else {
+                return person
+              }
+            }))
+          })
+      }
     } else {
-      setPersons(persons.concat(personObject))
+      personService
+        .create(personObject)
+        .then(returnedPerson => {
+          setPersons(persons.concat(returnedPerson))
+        })
     }
     setNewName('')
     setNewNumber('')
@@ -52,12 +69,23 @@ const App = () => {
       setShowAll(false)
     }
   }
-  
+
   const namesToShow = showAll
     ? persons
     : persons.filter((person) => {
       return person.name.toLowerCase().includes(filterValue.toLowerCase())
     })
+
+  const deletePerson = (id, name) => {
+    const deleteAllowed = window.confirm(`Delete ${name}?`)
+    if (deleteAllowed) {
+      personService
+        .deleteObject(id)
+      setPersons(persons.filter(person => {
+        return person.id !== id
+      }))
+    }
+  }
 
   return (
     <div>
@@ -68,7 +96,7 @@ const App = () => {
         newName={newName} handleNameChange={handleNameChange}
         newNumber={newNumber} handleNumberChange={handleNumberChange} />
       <h2>Numbers</h2>
-      <RenderPersons namesToShow={namesToShow} />
+      <RenderPersons namesToShow={namesToShow} deletePerson={deletePerson} />
     </div>
   )
 }
