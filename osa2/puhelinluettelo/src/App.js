@@ -3,6 +3,7 @@ import FilterForm from './components/FilterForm'
 import AddPersonForm from './components/AddPersonForm'
 import RenderPersons from './components/RenderPersons'
 import personService from './services/persons'
+import './index.css'
 
 const App = () => {
 
@@ -11,6 +12,8 @@ const App = () => {
   const [newNumber, setNewNumber] = useState('')
   const [showAll, setShowAll] = useState(true)
   const [filterValue, setFilterValue] = useState('')
+  const [notificationMessage, setNotificationMessage] = useState(null)
+  const [errorMessage, setErrorMessage] = useState(null)
 
   useEffect(() => {
     personService
@@ -41,12 +44,30 @@ const App = () => {
               }
             }))
           })
+          .then(() => {
+            setNotificationMessage(`Updated ${newName}`)
+            setTimeout(() => {
+              setNotificationMessage(null)
+            }, 5000)
+          })
+          .catch(error => {
+            setErrorMessage(`Information of ${newName} has already been removed from server`)
+            setTimeout(() => {
+              setErrorMessage(null)
+            }, 5000)
+          })
       }
     } else {
       personService
         .create(personObject)
         .then(returnedPerson => {
           setPersons(persons.concat(returnedPerson))
+        })
+        .then(() => {
+          setNotificationMessage(`Added ${newName}`)
+          setTimeout(() => {
+            setNotificationMessage(null)
+          }, 5000)
         })
     }
     setNewName('')
@@ -81,15 +102,24 @@ const App = () => {
     if (deleteAllowed) {
       personService
         .deleteObject(id)
-      setPersons(persons.filter(person => {
+        .then(
+        setPersons(persons.filter(person => {
         return person.id !== id
-      }))
+        })))
+        .then(() => {
+          setNotificationMessage(`Deleted ${name}`)
+          setTimeout(() => {
+            setNotificationMessage(null)
+          }, 5000)
+        })
     }
   }
 
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={notificationMessage} />
+      <Error message={errorMessage} />
       <FilterForm filterValue={filterValue} handleFilterValueChange={handleFilterValueChange} />
       <h2>Add a new</h2>
       <AddPersonForm addPerson={addPerson}
@@ -97,6 +127,30 @@ const App = () => {
         newNumber={newNumber} handleNumberChange={handleNumberChange} />
       <h2>Numbers</h2>
       <RenderPersons namesToShow={namesToShow} deletePerson={deletePerson} />
+    </div>
+  )
+}
+
+const Notification = ({message}) => {
+  if (message === null) {
+    return null
+  }
+
+  return (
+    <div className="notification">
+      {message}
+    </div>
+  )
+}
+
+const Error = ({message}) => {
+  if (message === null) {
+    return null
+  }
+
+  return (
+    <div className="error">
+      {message}
     </div>
   )
 }
