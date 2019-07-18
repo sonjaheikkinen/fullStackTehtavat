@@ -29,12 +29,12 @@ const App = () => {
       name: newName,
       number: newNumber
     }
-    const foundPerson = persons.filter(person => person.name === newName)
-    if (foundPerson.length !== 0) {
+    const foundPerson = persons.find(person => person.name === newName)
+    if (foundPerson) {
       const updateAllowed = window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)
       if (updateAllowed) {
         personService
-          .update(foundPerson[0].id, personObject)
+          .update(foundPerson.id, personObject)
           .then(returnedPerson => {
             setPersons(persons.map(person => {
               if (person.name === returnedPerson.name) {

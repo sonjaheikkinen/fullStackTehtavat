@@ -11,7 +11,7 @@ const RenderPersons = ({ namesToShow, deletePerson }) => {
 
 const Person = ({person, deletePerson}) => {
     return (
-        <li>
+        <li key={person.id}>
         {person.name} {person.number}
         <button onClick={deletePerson}>delete</button>
         </li>
